@@ -119,7 +119,7 @@ function render(){
     left.append(h("b",null,fmtDay(d)+(key===today?" (اليوم)":"")), h("br"), h("small",null,fmtDate(d)));
     const add = h("button","mini","+ زيارة"); add.onclick=()=>openForm(key);
     hd.append(left, add); card.append(hd);
-    if(!list.length) card.append(h("div","alone","لا أحد حتى الآن.   اغتنم الفرصة  ."));
+    if(!list.length) card.append(h("div","alone","لا أحد حتى الآن.   اغتنم الفرصة✨ ."));
     for(const v of list){
       const row = h("div","v"), b = h("div","b");
       b.append(h("div","n",v.name)); if(v.note) b.append(h("div","r",v.note));
