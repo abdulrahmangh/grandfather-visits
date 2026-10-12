@@ -135,7 +135,7 @@ function weekStars(){
   const groups = [];
   for(const e of all){ const g = groups[groups.length-1]; if(g && g.n===e.n) g.names.push(e.name); else groups.push({n:e.n, names:[e.name]}); }
   const top = groups.slice(0,3);
-  const keep = new Set(top.flatMap(g=>g.names.map(normName)));
+  const keep = new Set(top.length ? top[0].names.map(normName) : []);   // ⭐ بجانب الأسماء صاحبة أكبر عدد زيارات فقط
   return {keys:keep, top};
 }
 const makePast = () => Array.from({length:7},(_,i)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-7+i);return d;});
@@ -146,7 +146,7 @@ function render(){
   const star = weekStars(), starEl = $("star");
   const medals = ["🥇","🥈","🥉"];
   if(star.top.length){
-    starEl.replaceChildren(h("div",null,"⭐ نجوم الأسبوع  "), ...star.top.map((g,i)=>h("div",null,medals[i]+" "+g.names.join(" و")+" — "+countText(g.n))));
+    starEl.replaceChildren(h("div",null,"⭐ نجوم الأسبوع (اليوم و٦ أيام قبله)"), ...star.top.map((g,i)=>h("div",null,medals[i]+" "+g.names.join(" و")+" — "+countText(g.n))));
   } else {
     starEl.replaceChildren(h("div",null,"⭐ نجوم الأسبوع: لا أحد بعد. يظهر الاسم الذي يكرر زيارته مرتين فأكثر."));
   }
