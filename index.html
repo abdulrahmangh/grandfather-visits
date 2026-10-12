@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+l<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -36,6 +36,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .fab{position:fixed;inset-inline:16px;bottom:calc(16px + env(safe-area-inset-bottom));max-width:528px;margin:0 auto;background:var(--pri);color:var(--pri-ink);border:0;border-radius:16px;padding:16px;font:inherit;font-size:19px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .past{display:block;width:100%;margin:14px 0 4px;background:none;border:1.5px dashed var(--line);color:var(--mute);border-radius:12px;padding:10px;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
 .day.old{opacity:.78}
+.star{background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:10px 14px;margin:10px 0 0;font-weight:700;font-size:16px}
 .mini{background:none;border:1.5px solid var(--pri);color:var(--pri);border-radius:10px;padding:4px 12px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
 dialog{border:0;border-radius:20px 20px 0 0;padding:0;width:100%;max-width:560px;margin:auto auto 0;background:var(--card);color:var(--ink)}
 dialog::backdrop{background:rgba(0,0,0,.5)}
@@ -58,6 +59,7 @@ textarea{min-height:76px;resize:vertical}
     <p> ﴿ فَاسْتَبِقُوا الْخَيْرَاتِ ﴾ 🤍 </p>
     <div id="demo" class="demo" hidden>وضع تجريبي: الزيارات تُحفظ على هذا الجهاز فقط. اربط قاعدة البيانات لتظهر للجميع.</div>
   </header>
+  <div class="star" id="star" hidden></div>
   <button class="past" id="past" type="button">عرض آخر ٧ أيام</button>
   <main id="days"></main>
 </div>
@@ -115,11 +117,31 @@ async function load(){
   }catch(e){ if(!visits.length){ $("days").replaceChildren(h("div","alone","تعذّر تحميل الزيارات. تأكد من الاتصال بالإنترنت ثم أعد فتح الصفحة.")); } }
 }
 let showPast = false;
+// نجم الأسبوع: أكثر اسم تكرر في آخر ٧ أيام (من اليوم و٦ أيام قبله)، بشرط زيارتين على الأقل
+const normName = s => s.trim().replace(/\s+/g," ").replace(/[ً-ْـ]/g,"").replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").toLowerCase();
+const countText = n => n===2 ? "زيارتان" : (n>=3 && n<=10 ? n.toLocaleString("ar")+" زيارات" : n.toLocaleString("ar")+" زيارة");
+function weekStars(){
+  const start = new Date(); start.setHours(0,0,0,0); start.setDate(start.getDate()-6);
+  const from = iso(start), to = iso(new Date());
+  const m = new Map();
+  for(const v of visits){
+    if(v.date<from || v.date>to) continue;
+    const k = normName(v.name||""); if(!k) continue;
+    const e = m.get(k) || {name:v.name.trim(), n:0}; e.n++; m.set(k,e);
+  }
+  const max = Math.max(0,...[...m.values()].map(e=>e.n));
+  if(max<2) return {keys:new Set(), names:[], max:0};
+  const top = [...m.entries()].filter(([k,e])=>e.n===max);
+  return {keys:new Set(top.map(([k])=>k)), names:top.map(([k,e])=>e.name), max};
+}
 const makePast = () => Array.from({length:7},(_,i)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-7+i);return d;});
 function render(){
   days = makeDays();
   const today = iso(new Date()), out = [];
   const pastKeys = new Set(makePast().map(iso));
+  const star = weekStars(), starEl = $("star");
+  if(star.names.length){ starEl.textContent = "⭐ نجم الأسبوع: " + star.names.join(" و") + " — " + countText(star.max) + " في آخر ٧ أيام"; starEl.hidden = false; }
+  else starEl.hidden = true;
   const shown = showPast ? [...makePast(), ...days] : days;
   $("past").textContent = showPast ? "إخفاء الأيام السابقة" : "عرض آخر ٧ أيام";
   for(const d of shown){
@@ -133,7 +155,7 @@ function render(){
     if(!list.length) card.append(h("div","alone",old?"لم تُسجَّل زيارات في هذا اليوم.":"لا أحد حتى الآن.   اغتنم الفرصة✨."));
     for(const v of list){
       const row = h("div","v"), b = h("div","b");
-      b.append(h("div","n",v.name)); if(v.note) b.append(h("div","r",v.note));
+      b.append(h("div","n",v.name + (star.keys.has(normName(v.name||"")) ? " ⭐" : ""))); if(v.note) b.append(h("div","r",v.note));
       row.append(h("div","t",fmtTime(v.time)), b);
       if(mine.has(String(v.id))){ const x=h("button","x","حذف"); x.onclick=()=>del(v.id); row.append(x); }
       card.append(row);
