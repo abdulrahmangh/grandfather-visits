@@ -146,7 +146,7 @@ function render(){
   const star = weekStars(), starEl = $("star");
   const medals = ["🥇","🥈","🥉"];
   if(star.top.length){
-    starEl.replaceChildren(h("div",null,"⭐ نجوم الأسبوع (اليوم و٦ أيام قبله)"), ...star.top.map((g,i)=>h("div",null,medals[i]+" "+g.names.join(" و")+" — "+countText(g.n))));
+    starEl.replaceChildren(h("div",null,"⭐ نجوم الأسبوع  "), ...star.top.map((g,i)=>h("div",null,medals[i]+" "+g.names.join(" و")+" — "+countText(g.n))));
   } else {
     starEl.replaceChildren(h("div",null,"⭐ نجوم الأسبوع: لا أحد بعد. يظهر الاسم الذي يكرر زيارته مرتين فأكثر."));
   }
