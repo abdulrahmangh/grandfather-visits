@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>زيارات أبوي</title>
+<title>زيارات جدّي</title>
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:Tajawal,system-u
 .wrap{max-width:560px;margin:0 auto;padding:0 16px}
 header{padding:28px 0 12px 108px;position:relative;min-height:124px}
 .avatar{position:absolute;left:0;top:24px;width:92px;height:92px;object-fit:contain;filter:drop-shadow(0 2px 5px rgba(0,0,0,.22))}
-h1{margin:0;font-size:30px;font-weight:800;line-height:1.25}
+h1{margin:0;font-size:24px;font-weight:800;line-height:1.25}
 header p{margin:6px 0 0;color:var(--mute)}
 .demo{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:14px}
 .day{background:var(--card);border:1px solid var(--line);border-radius:16px;margin:12px 0;padding:14px 16px}
@@ -34,6 +34,8 @@ header p{margin:6px 0 0;color:var(--mute)}
 .x{border:0;background:none;color:var(--mute);font:inherit;font-size:14px;padding:6px 4px;cursor:pointer;text-decoration:underline}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
 .fab{position:fixed;inset-inline:16px;bottom:calc(16px + env(safe-area-inset-bottom));max-width:528px;margin:0 auto;background:var(--pri);color:var(--pri-ink);border:0;border-radius:16px;padding:16px;font:inherit;font-size:19px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.past{display:block;width:100%;margin:14px 0 4px;background:none;border:1.5px dashed var(--line);color:var(--mute);border-radius:12px;padding:10px;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+.day.old{opacity:.78}
 .mini{background:none;border:1.5px solid var(--pri);color:var(--pri);border-radius:10px;padding:4px 12px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
 dialog{border:0;border-radius:20px 20px 0 0;padding:0;width:100%;max-width:560px;margin:auto auto 0;background:var(--card);color:var(--ink)}
 dialog::backdrop{background:rgba(0,0,0,.5)}
@@ -56,6 +58,7 @@ textarea{min-height:76px;resize:vertical}
     <p> ﴿ فَاسْتَبِقُوا الْخَيْرَاتِ ﴾ 🤍 </p>
     <div id="demo" class="demo" hidden>وضع تجريبي: الزيارات تُحفظ على هذا الجهاز فقط. اربط قاعدة البيانات لتظهر للجميع.</div>
   </header>
+  <button class="past" id="past" type="button">عرض آخر ٧ أيام</button>
   <main id="days"></main>
 </div>
 <button class="fab" id="open">+ أضف زيارتك</button>
@@ -111,17 +114,23 @@ async function load(){
     render();
   }catch(e){ if(!visits.length){ $("days").replaceChildren(h("div","alone","تعذّر تحميل الزيارات. تأكد من الاتصال بالإنترنت ثم أعد فتح الصفحة.")); } }
 }
+let showPast = false;
+const makePast = () => Array.from({length:7},(_,i)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-7+i);return d;});
 function render(){
   days = makeDays();
   const today = iso(new Date()), out = [];
-  for(const d of days){
-    const key = iso(d), list = visits.filter(v=>v.date===key).sort((a,b)=>a.time.localeCompare(b.time));
-    const card = h("section","day"+(key===today?" today":""));
+  const pastKeys = new Set(makePast().map(iso));
+  const shown = showPast ? [...makePast(), ...days] : days;
+  $("past").textContent = showPast ? "إخفاء الأيام السابقة" : "عرض آخر ٧ أيام";
+  for(const d of shown){
+    const key = iso(d), old = pastKeys.has(key), list = visits.filter(v=>v.date===key).sort((a,b)=>a.time.localeCompare(b.time));
+    const card = h("section","day"+(key===today?" today":"")+(old?" old":""));
     const hd = h("div","dh"), left = h("div");
     left.append(h("b",null,fmtDay(d)+(key===today?" (اليوم)":"")), h("br"), h("small",null,fmtDate(d)));
-    const add = h("button","mini","+ زيارة"); add.onclick=()=>openForm(key);
-    hd.append(left, add); card.append(hd);
-    if(!list.length) card.append(h("div","alone","لا أحد حتى الآن.   اغتنم الفرصة✨."));
+    hd.append(left);
+    if(!old){ const add = h("button","mini","+ زيارة"); add.onclick=()=>openForm(key); hd.append(add); }
+    card.append(hd);
+    if(!list.length) card.append(h("div","alone",old?"لم تُسجَّل زيارات في هذا اليوم.":"لا أحد حتى الآن.   اغتنم الفرصة✨."));
     for(const v of list){
       const row = h("div","v"), b = h("div","b");
       b.append(h("div","n",v.name)); if(v.note) b.append(h("div","r",v.note));
@@ -163,6 +172,7 @@ $("f").onsubmit = async e => {
   $("save").disabled = false;
 };
 $("open").onclick = () => openForm();
+$("past").onclick = () => { showPast = !showPast; render(); };
 $("cancel").onclick = () => $("dlg").close();
 $("demo").hidden = live;
 load();
